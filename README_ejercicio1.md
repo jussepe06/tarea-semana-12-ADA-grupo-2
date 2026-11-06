@@ -3,105 +3,104 @@
 ## 1. Diseño del Algoritmo
 
 ### Contexto y Restricción Operativa
-Dado un conjunto secuencial de $n$ proyectos donde cada proyecto $i \in \{0, 1, \dots, n-1\}$ aporta una ganancia estimada positiva $\text{proyectos}[i] > 0$, se busca determinar el subconjunto de proyectos que maximice la ganancia total acumulada bajo la restricción de **no adyacencia**: si se selecciona el proyecto $i$, no es posible seleccionar los proyectos inmediatos $i-1$ ni $i+1$ debido a que comparten recursos humanos y tecnológicos.
+Tenemos una lista de n proyectos en orden, donde cada proyecto i (desde 0 hasta n - 1) nos da una ganancia positiva (proyectos[i] > 0). La meta es elegir proyectos de manera que obtengamos la mayor ganancia total posible. La única condición es que no podemos elegir dos proyectos que estén juntos (adyacentes), porque en la empresa comparten los mismos recursos de personal y tecnología.
 
-### Paradigma de Diseño: Programación Dinámica
-El problema exhibe las dos propiedades fundamentales para aplicar Programación Dinámica (enfoque *Bottom-Up* / tabulación iterativa):
+### Enfoque: Programación Dinámica
+Para resolver esto de forma eficiente usamos Programación Dinámica con un enfoque iterativo (de abajo hacia arriba):
 
-1. **Subestructura Óptima:** La solución óptima para los primeros $i$ proyectos se construye directamente a partir de las soluciones óptimas de subproblemas más pequeños (específicamente, los subproblemas correspondientes a los prefijos hasta $i-1$ e $i-2$).
-2. **Superposición de Subproblemas:** Un enfoque recursivo ingenuo recalcularía múltiples veces la ganancia máxima para los mismos prefijos de proyectos (generando un árbol de recursión exponencial de orden $O(2^n)$). Al almacenar o propagar los resultados de estados previos de manera iterativa, cada subproblema se resuelve exactamente una vez en tiempo constante $O(1)$.
+1. **Subestructura Óptima:** Para saber la mejor ganancia posible hasta el proyecto i, nos apoyamos directamente en las mejores decisiones que ya calculamos para los proyectos anteriores (hasta i - 1 y hasta i - 2).
+2. **Subproblemas Superpuestos:** Si intentáramos probar todas las combinaciones posibles de manera recursiva, repetiríamos los mismos cálculos una y otra vez (llegando a una complejidad exponencial de O(2^n)). Con programación dinámica guardamos o reutilizamos las respuestas previas, resolviendo cada paso una sola vez en tiempo O(1).
 
 ---
 
-## 2. Formulación Matemática y Relación de Recurrencia
+## 2. Relación de Recurrencia
 
 ### Definición del Estado
-Sea $dp[i]$ la máxima ganancia total que se puede obtener considerando únicamente el subconjunto de proyectos desde el índice $0$ hasta el índice $i$ (es decir, el prefijo $\text{proyectos}[0 \dots i]$).
+Llamamos dp[i] a la máxima ganancia acumulada que podemos conseguir considerando únicamente los proyectos desde el inicio (índice 0) hasta el proyecto actual (índice i).
 
-### Análisis de Decisiones (Transición de Estado)
-Para cada proyecto en la posición $i$ ($i \ge 2$), existen exactamente dos decisiones mutuamente excluyentes:
+### Opciones en cada paso
+Cuando estamos parados en el proyecto i (para i >= 2), solo tenemos dos caminos posibles:
 
-1. **No seleccionar el proyecto $i$:**  
-   No se incorpora la ganancia $\text{proyectos}[i]$, pero tampoco se impone ninguna restricción sobre el proyecto $i-1$. Por lo tanto, la ganancia máxima óptima acumulada es idéntica a la mejor solución obtenida hasta el proyecto anterior:
-   $$\text{Ganancia}_{\text{excluir}} = dp[i-1]$$
+1. **No elegir el proyecto i:**  
+   Si decidimos no tomarlo, no sumamos su ganancia, pero tenemos la libertad de haber tomado el proyecto anterior. Así que la ganancia acumulada es simplemente la misma que ya teníamos hasta el proyecto anterior:  
+   Ganancia = dp[i - 1]
 
-2. **Seleccionar el proyecto $i$:**  
-   Se obtiene la ganancia $\text{proyectos}[i]$. Debido a la restricción de proyectos consecutivos, queda prohibido seleccionar el proyecto $i-1$. En consecuencia, a la ganancia actual se le suma la ganancia máxima óptima acumulada hasta el proyecto $i-2$:
-   $$\text{Ganancia}_{\text{incluir}} = \text{proyectos}[i] + dp[i-2]$$
+2. **Elegir el proyecto i:**  
+   Si lo tomamos, sumamos su ganancia (proyectos[i]). Pero como no podemos tomar dos consecutivos, no podemos usar el proyecto i - 1; entonces le sumamos la mejor ganancia que traíamos hasta dos proyectos atrás (i - 2):  
+   Ganancia = proyectos[i] + dp[i - 2]
 
-### Ecuación de Recurrencia (Ecuación de Bellman)
-Para maximizar el beneficio en el paso $i$, se elige el máximo entre ambas alternativas:
+### Ecuación de Transición
+Como buscamos maximizar la ganancia, en cada paso tomamos el valor más alto entre esas dos opciones:
 
-$$dp[i] = \max\big(dp[i-1], \;\text{proyectos}[i] + dp[i-2]\big) \quad \forall \, i \in \{2, \dots, n-1\}$$
+dp[i] = max(dp[i - 1], proyectos[i] + dp[i - 2])
 
 ### Casos Base
-Para detener la recurrencia y cimentar la progresión iterativa, se definen los casos frontera:
-- **Arreglo vacío ($n = 0$):** La ganancia máxima es $0$.
-- **Un solo proyecto ($i = 0$):** Al ser todas las ganancias positivas y no existir conflicto de adyacencia, la decisión óptima es elegir el único proyecto disponible:
-  $$dp[0] = \text{proyectos}[0]$$
-- **Dos proyectos ($i = 1$):** Como son adyacentes entre sí, solo es posible financiar uno de los dos. Se escoge aquel con mayor beneficio:
-  $$dp[1] = \max(\text{proyectos}[0], \text{proyectos}[1])$$
+Para que el algoritmo pueda arrancar, definimos los casos iniciales:
+- **Sin proyectos (n = 0):** La ganancia es 0.
+- **Un solo proyecto (i = 0):** Como solo hay uno y las ganancias son positivas, lo elegimos directamente:  
+  dp[0] = proyectos[0]
+- **Dos proyectos (i = 1):** Como están juntos, solo podemos quedarnos con uno de ellos. Elegimos el que dé más ganancia:  
+  dp[1] = max(proyectos[0], proyectos[1])
 
 ---
 
-## 3. ¿Cómo se optimizó este algoritmo para que no use un arreglo `dp`, sino solo dos variables auxiliares?
+## 3. ¿Cómo se optimizó este algoritmo para que no use un arreglo dp, sino solo dos variables auxiliares?
 
-### Análisis de Dependencia de Estados
-En la formulación clásica con arreglo dinámico (`vector<int> dp(n)`), se reserva un bloque continuo de memoria de tamaño proporcional a $n$ para guardar todos los estados desde $dp[0]$ hasta $dp[n-1]$. Sin embargo, al observar la ecuación de transición:
+### Dependencia de Estados
+Normalmente, al implementar esto se crea un vector o arreglo completo de tamaño n (`vector<int> dp(n)`). Sin embargo, si miramos con atención la fórmula:
 
-$$dp[i] = \max(dp[i-1], \;\text{proyectos}[i] + dp[i-2])$$
+dp[i] = max(dp[i - 1], proyectos[i] + dp[i - 2])
 
-se evidencia que el cálculo del estado actual $dp[i]$ **depende única y exclusivamente de los dos estados inmediatamente anteriores**: $dp[i-1]$ y $dp[i-2]$. Una vez calculado $dp[i]$, todos los estados históricos $dp[0], dp[1], \dots, dp[i-3]$ jamás vuelven a ser consultados en las iteraciones futuras.
+nos damos cuenta de que para calcular el estado actual dp[i] únicamente necesitamos dos valores: el que está justo antes (dp[i - 1]) y el que está dos lugares antes (dp[i - 2]). Los resultados más antiguos (como dp[i - 3], dp[i - 4], etc.) ya no se vuelven a consultar nunca más.
 
-### El Concepto de "Ventana Móvil" (*Sliding Window*) sobre los Estados
-Dado que en cualquier instante de la iteración solo necesitamos recordar los **dos últimos valores calculados**, podemos reemplazar la tabla completa $dp[0 \dots n-1]$ por una **ventana móvil de tamaño fijo 2**, representada mediante dos variables escalares auxiliares:
+### El concepto de "Ventana Móvil"
+En lugar de guardar en memoria todo el historial con un arreglo de tamaño n, podemos usar una ventana móvil de tamaño 2 que solo recuerde los dos últimos valores calculados a medida que avanzamos. Para esto nos bastan dos variables simples:
 
-- `prev2`: Almacena el estado $dp[i-2]$ (la mejor ganancia acumulada dos posiciones atrás).
-- `prev1`: Almacena el estado $dp[i-1]$ (la mejor ganancia acumulada una posición atrás).
+- `prev2`: guarda el valor de dp[i - 2] (dos posiciones atrás).
+- `prev1`: guarda el valor de dp[i - 1] (una posición atrás).
 
-#### Dinámica de Desplazamiento de la Ventana
-1. **Inicialización (Posiciones $0$ y $1$):**
-   - `prev2 = proyectos[0]` (equivale a $dp[0]$)
-   - `prev1 = max(proyectos[0], proyectos[1])` (equivale a $dp[1]$)
+#### ¿Cómo se mueve la ventana en cada paso?
+1. **Inicio:**
+   - `prev2 = proyectos[0]` (representa dp[0])
+   - `prev1 = max(proyectos[0], proyectos[1])` (representa dp[1])
 
-2. **Transición y Avance (Para cada $i$ desde $2$ hasta $n-1$):**
-   - Se calcula el nuevo estado óptimo: `actual = max(prev1, proyectos[i] + prev2)` (equivale a $dp[i]$).
-   - La ventana se desliza un paso hacia la derecha para preparar la iteración $i+1$:
-     - El antiguo $dp[i-1]$ pasa a ser el nuevo $dp[i-2]$: `prev2 = prev1`
-     - El recién calculado $dp[i]$ pasa a ser el nuevo $dp[i-1]$: `prev1 = actual`
+2. **Iteración (desde i = 2 hasta n - 1):**
+   - Calculamos el valor actual: `actual = max(prev1, proyectos[i] + prev2)`
+   - Desplazamos la ventana un lugar a la derecha:
+     - `prev2 = prev1` (lo que estaba una posición atrás pasa a estar dos atrás)
+     - `prev1 = actual` (el valor que acabamos de calcular pasa a ser el anterior para la siguiente vuelta)
 
-### Reducción de Memoria de $O(n)$ a $O(1)$
-- **Con arreglo `dp` ($O(n)$):** La memoria auxiliar crece linealmente con la cantidad de proyectos $n$. Si $n = 10^7$, el arreglo requiere aproximadamente $40\text{ MB}$ de memoria RAM adicional.
-- **Con ventana móvil de dos variables ($O(1)$):** Sin importar si $n = 6$ o $n = 10^9$, el algoritmo utiliza únicamente un número constante de variables enteras en la pila (*stack*): `prev2`, `prev1` y `actual`. El consumo de memoria auxiliar permanece estrictamente constante, logrando complejidad espacial **$O(1)$** mientras conserva intacta la complejidad temporal **$O(n)$**.
+### Por qué la memoria pasa de O(n) a O(1)
+- **Con arreglo dp:** la memoria que gastamos crece con n. Si tuviéramos un millón de proyectos, el arreglo ocuparía varios megabytes en memoria.
+- **Con las dos variables auxiliares:** sin importar si tenemos 6 proyectos o un millón, el algoritmo solo usa un par de variables locales en memoria (`prev2`, `prev1` y `actual`). Por eso el uso de memoria adicional es constante: pasa de O(n) a O(1).
 
 ---
 
-## 4. Traza de Ejecución Paso a Paso
+## 4. Prueba paso a paso con el ejemplo
 
-Para la entrada `proyectos = {5, 5, 10, 100, 10, 5}` ($n = 6$):
+Para el ejemplo del ejercicio: `proyectos = {5, 5, 10, 100, 10, 5}` con n = 6
 
-| Iteración ($i$) | `proyectos[i]` | `prev2` ($dp[i-2]$) | `prev1` ($dp[i-1]$) | Cálculo de `actual` ($\max(\text{prev1}, \text{proyectos}[i] + \text{prev2})$) | Nuevo `prev2` | Nuevo `prev1` |
+| Paso (i) | proyectos[i] | prev2 (dp[i-2]) | prev1 (dp[i-1]) | Cálculo de actual: max(prev1, proyectos[i] + prev2) | Nuevo prev2 | Nuevo prev1 |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Casos Base** ($0, 1$) | $5, 5$ | — | — | $dp[0] = 5$, $dp[1] = \max(5, 5) = 5$ | $5$ | $5$ |
-| $i = 2$ | $10$ | $5$ | $5$ | $\max(5, 10 + 5) = \mathbf{15}$ | $5$ | $15$ |
-| $i = 3$ | $100$ | $5$ | $15$ | $\max(15, 100 + 5) = \mathbf{105}$ | $15$ | $105$ |
-| $i = 4$ | $10$ | $15$ | $105$ | $\max(105, 10 + 15) = \mathbf{105}$ | $105$ | $105$ |
-| $i = 5$ | $5$ | $105$ | $105$ | $\max(105, 5 + 105) = \mathbf{110}$ | $105$ | $110$ |
+| **Bases** (0, 1) | 5, 5 | — | — | dp[0] = 5, dp[1] = max(5, 5) = 5 | 5 | 5 |
+| i = 2 | 10 | 5 | 5 | max(5, 10 + 5) = 15 | 5 | 15 |
+| i = 3 | 100 | 5 | 15 | max(15, 100 + 5) = 105 | 15 | 105 |
+| i = 4 | 10 | 15 | 105 | max(105, 10 + 15) = 105 | 105 | 105 |
+| i = 5 | 5 | 105 | 105 | max(105, 5 + 105) = 110 | 105 | 110 |
 
-Al finalizar el bucle, `prev1` contiene el valor **`110`**, que corresponde a seleccionar los proyectos en los índices $0, 3 \text{ y } 5$ ($5 + 100 + 5 = 110$).
-
----
-
-## 5. Complejidad Algorítmica
-
-- **Complejidad Temporal:** $O(n)$, dado que se recorre la secuencia de proyectos una sola vez desde $i = 2$ hasta $n - 1$, realizando operaciones aritméticas y de comparación en tiempo $O(1)$ por cada elemento.
-- **Complejidad Espacial:** $O(1)$ de espacio auxiliar, al prescindir de estructuras de datos dinámicas y emplear únicamente variables escalares para mantener la ventana móvil de estados.
+Al terminar el recorrido, `prev1` queda con el resultado final: **110** (que corresponde a sumar los proyectos en los índices 0, 3 y 5: 5 + 100 + 5 = 110).
 
 ---
 
-## 6. Conclusiones de la Sesión Didáctica
+## 5. Complejidad
 
-1. **Identificación de Subestructura Óptima en Problemas con Restricciones Locales:** Los problemas de optimización combinatoria donde una elección invalida elementos adyacentes pueden modelarse eficazmente mediante Programación Dinámica reduciendo cada etapa a una decisión binaria (incluir el elemento actual sumado al estado $i-2$, o excluirlo conservando el estado $i-1$).
-2. **Eliminación de Trabajo Redundante:** A diferencia de la fuerza bruta recursiva que explora todas las combinaciones válidas en tiempo exponencial $O(2^n)$, la formulación iterativa *Bottom-Up* resuelve cada subproblema una única vez, alcanzando una eficiencia temporal óptima de $O(n)$.
-3. **Optimización Espacial mediante Ventana Móvil de Estados:** Cuando una relación de recurrencia de orden $k$ depende únicamente de los últimos $k$ estados previos ($k=2$ en este caso), no es necesario almacenar toda la tabla de programación dinámica en memoria; basta con mantener una ventana deslizante de $k$ variables auxiliares para reducir la complejidad espacial de $O(n)$ a $O(1)$.
+- **Tiempo:** O(n), porque solo hacemos un bucle que recorre la lista una sola vez desde i = 2 hasta n - 1. En cada iteración solo hacemos operaciones elementales (una suma y una comparación max).
+- **Espacio:** O(1), porque no creamos ningún arreglo adicional y solo usamos un número fijo de variables auxiliares en memoria.
 
+---
+
+## 6. Conclusiones
+
+1. **Modelado con Programación Dinámica:** En problemas donde no podemos elegir elementos consecutivos, la decisión en cada paso se reduce a dos opciones claras: tomar el elemento actual (sumándolo al resultado de hace dos posiciones) o no tomarlo (manteniendo el acumulado de la posición anterior).
+2. **Eficiencia frente a la fuerza bruta:** La formulación iterativa resuelve cada subproblema en orden y una sola vez, logrando un tiempo lineal O(n) y evitando la explosión combinatoria O(2^n) de la recursión simple.
+3. **Optimización con ventana móvil:** Como cada estado solo depende de los dos resultados inmediatamente anteriores, no hace falta guardar todo el arreglo en memoria. Con solo dos variables podemos llevar la cuenta, reduciendo el espacio de O(n) a O(1).
