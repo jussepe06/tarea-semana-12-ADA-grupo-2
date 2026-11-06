@@ -1,9 +1,10 @@
 #include <algorithm>
-#include <cassert>
 #include <iostream>
 #include <vector>
 
-int maximaGananciaNoAdyacente(const std::vector<int>& proyectos) {
+using namespace std;
+
+int maximaGananciaNoAdyacente(const vector<int>& proyectos) {
     int n = static_cast<int>(proyectos.size());
     if (n == 0) {
         return 0;
@@ -13,10 +14,10 @@ int maximaGananciaNoAdyacente(const std::vector<int>& proyectos) {
     }
 
     int prev2 = proyectos[0];
-    int prev1 = std::max(proyectos[0], proyectos[1]);
+    int prev1 = max(proyectos[0], proyectos[1]);
 
     for (int i = 2; i < n; ++i) {
-        int actual = std::max(prev1, proyectos[i] + prev2);
+        int actual = max(prev1, proyectos[i] + prev2);
         prev2 = prev1;
         prev1 = actual;
     }
@@ -25,10 +26,13 @@ int maximaGananciaNoAdyacente(const std::vector<int>& proyectos) {
 }
 
 int main() {
-    std::vector<int> proyectos = {5, 5, 10, 100, 10, 5};
-    int gananciaMaxima = maximaGananciaNoAdyacente(proyectos);
-    assert(gananciaMaxima == 110);
-    std::cout << gananciaMaxima << std::endl;
+    int n;
+    if (cin >> n) {
+        vector<int> proyectos(n);
+        for (int i = 0; i < n; ++i) {
+            cin >> proyectos[i];
+        }
+        cout << maximaGananciaNoAdyacente(proyectos) << endl;
+    }
     return 0;
 }
-
